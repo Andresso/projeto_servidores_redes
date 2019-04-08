@@ -9,3 +9,4 @@
 	Fiz a maioria das coisas a partir dos exemplos deste site: 
 	https://realpython.com/python-sockets/#background
 '''	
+
