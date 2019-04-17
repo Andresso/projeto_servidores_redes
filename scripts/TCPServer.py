@@ -60,7 +60,7 @@ while True:
                 except IOError:
                     connectionSocket.send("HTTP/1.1 404 Not Found\n\r".encode('utf-8'))
                     print("\n\n404 Not Found\n\n")
-                    connectionSocket.send("404 Not Found".encode('utf-8'))
+                    connectionSocket.send("404 Not Found\r\n".encode('utf-8'))
             else:
                 connectionSocket.send("HTTP/1.1 200 OK\n\r".encode('utf-8'))
                 connectionSocket.send(page(serverPort))
