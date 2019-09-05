@@ -6,7 +6,7 @@
 '''	
 import socket as sk
 
-serverPort = 12002
+serverPort = 12000
 serverSocket = sk.socket(sk.AF_INET, sk.SOCK_STREAM)
 serverSocket.bind(('', serverPort))
 serverSocket.listen(10)
@@ -37,11 +37,6 @@ while True:
         message = connectionSocket.recv(1024)
         if(message):
             print("mensagem", message.decode())
-            # commandList = message.decode().split()
-            # print(commandList)
-            # if('GET' in commandList or 'get' in commandList):
-            #   print commandList
-            #   pass
 
             command = message.decode()
             print "comando", get_command(command)
@@ -56,57 +51,93 @@ while True:
                 connectionSocket.send("530 Please login with USER and PASS.\r\n".encode('utf-8'))
             # Recebe
             elif(get_command(command) == "USER"):
-                username = get_arg(command) #" # username = nome do cara que fizer login
-                print "Nome", username
+                username = get_arg(command) #" # username = nome do usuário
                 # Responde
                 connectionSocket.send("331 Please specify the password.\r\n".encode('utf-8'))
             # Recebe
             elif(get_command(command) == "PASS"):
-                password = get_arg(command) # password = senha do cara..
-                print "Senha", password
+                password = get_arg(command) # password = senha do usuário.
                 # Responde 
                 connectionSocket.send("230 Login Successful.\r\n".encode('utf-8'))
             # Recebe
             elif(get_command(command) == "SYST"):
                 # Responde 
-                connectionSocket.send("215 seila.\r\n".encode('utf-8'))
+                connectionSocket.send("215.\r\n".encode('utf-8'))
             # Recebe
             elif(get_command(command) == "PWD"):
-                print "PWD .. deve ser pra mostrar o diretório do server"
+                print "PWD"
                 # Responde 
-                connectionSocket.send("257 /.\r\n".encode('utf-8'))
+                connectionSocket.send("257 '/'.\r\n".encode('utf-8'))
+            # Recebe
+            elif(get_command(command) == "PORT"):
+                # Responde 
+                connectionSocket.send('200 PORT OK\r\n'.encode('utf-8'))
+            # Recebe
+            elif(get_command(command) == "PORT"):
+                # Responde 
+                connectionSocket.send('200 PORT OK\r\n'.encode('utf-8'))
+
 
             # ----------------------------------------------------------
             # Transferência de arquivo
             # ----------------------------------------------------------
             # Do server para o Client
             # Recebe 
-            if(get_command(command) == "STOR"):
+            elif(get_command(command) == "STOR"):
+                # Nome do arquivo
                 fileName = get_arg(command)
                 # Responde
                 connectionSocket.send("150 Ok to send data.\r\n".encode('utf-8'))  # 150 = File status okay; about to open data connection
                 # Aqui cria o outro socket TCP para a transferência do arquivo
-                
-                # Envia os dados
+                dataPort=12002
+                # O IP do cliente conectado é o primeiro elemento da tupla addr
+                clientAdress=addr[0]
+                dataSocket=sk.socket(sk.AF_INET, sk.SOCK_STREAM)
+                dataSocket.connect((clientAdress, dataPort))
+                # Recebe os dados
+                dataSocket.recv(1024)
+                dataSocket.close()
 
                 # E quando termina de enviar o arquivo para o cliente, envia
-                connectionSocket.send("226 Transfer complete.\r\n".encode('utf-8')) # 226 = Closing data connection
+                connectionSocket.send("250 Transfer complete.\r\n".encode('utf-8'))
 
             # Do Client para o server
             # Recebe
             elif(get_command(command) == "RETR"):
+                # Nome do arquivo solicitado
                 fileName = get_arg(command)
-                # Responde
-                connectionSocket.send("150 Opening BINARY mode data connection for filename (tamanho)".encode('utf-8'))
-                 # Aqui cria o outro socket TCP para a transferência do arquivo
-                
-                # Envia os dados
+                try:
+                    # Tenta abrir arquivo
+                    file = open(fileName, 'r')
+                except IOError:
+                    # Retorna erro caso o arquivo não exista
+                    connectionSocket.send('550 File not found\r\n'.encode('utf-8'))
+                else:
+                    dataFile = file.read()
+                    # Se o arquivo existir
+                    connectionSocket.send("150\r\n".encode('utf-8'))  # 150 = File status okay; about to open data connection
+                    # Cria o outro socket TCP para a transferência do arquivo
+                    dataPort=12002
+                    # O IP do cliente conectado é o primeiro elemento da tupla addr
+                    clientAdress=addr[0]
+
+                    dataSocket=sk.socket(sk.AF_INET, sk.SOCK_STREAM)
+                    dataSocket.connect((clientAdress, dataPort))
+                    # Envia os dados
+                    dataSocket.send(dataFile.encode('utf-8'))
+                    dataSocket.close()
+                    file.close()
 
                 # E quando termina de enviar o arquivo para o servidor, envia
-                connectionSocket.send("226 Transfer complete.\r\n".encode('utf-8')) # 226 = Closing data connection
+                connectionSocket.send("250 Transfer complete.\r\n".encode('utf-8'))
             
-            if(get_command(command) == "bye"):
-                # Adicionar condição do bye
+            elif(get_command(command) == "QUIT"):
+                connection.send('221 bye\r\n'.encode('utf-8'))
+                connectionSocket.close()
+
+            else:
+                # Se for um comando não reconhecido
+                connection.send('221 bye\r\n'.encode('utf-8'))
                 connectionSocket.close()
         else:
             # Se for mensagem vazia

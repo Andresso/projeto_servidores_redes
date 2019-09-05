@@ -12,7 +12,7 @@
 
 import socket as sk
 
-serverPort = 12000
+serverPort = 12001
 serverSocket = sk.socket(sk.AF_INET, sk.SOCK_STREAM)
 serverSocket.bind(('', serverPort))
 serverSocket.listen(10)
@@ -41,22 +41,25 @@ while True:
     
     if(message):
         print()
-        commandList = message.decode().split()
+        commandList = message.decode('utf-8').split()
         print(commandList)
         if('GET' in commandList or 'get' in commandList):
             #print("tem get aqui")
             fileName = commandList[1][1:]
             if(fileName.endswith(".txt")):
-                print("Requisição do arquivo %s"%fileName)
+                print("Requisição do arquivo %s"%str(fileName))
      
                 try:
-                    file = open(fileName, 'r')
+                    file = open("./data/"+fileName, 'r')
                     print("Conteúdo do arquivo")
                     connectionSocket.send("HTTP/1.1 200 OK\n\r".encode('utf-8'))
          
                     for line in file.readlines():
                         print(line)
-                        connectionSocket.send(line.encode('utf-8'))
+                        try:
+                            connectionSocket.send(line.encode('utf-8'))
+                        except:
+                            connectionSocket.send("Erro...".encode('utf-8'))
                 except IOError:
                     connectionSocket.send("HTTP/1.1 404 Not Found\n\r".encode('utf-8'))
                     print("\n\n404 Not Found\n\n")
